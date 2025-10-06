@@ -8,34 +8,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
-import com.uvg.laboratorio5.network.PokemonDetailResponse
-import com.uvg.laboratorio5.network.RetrofitClient
-import kotlinx.coroutines.launch
+import com.uvg.laboratorio5.ui.state.PokemonDetailState
+import com.uvg.laboratorio5.ui.viewmodel.PokemonDetailViewModel
 import java.util.Locale
 
 @Composable
-fun PokemonDetailScreen(pokemonId: Int) {
-    val pokemonDetail = remember { mutableStateOf<PokemonDetailResponse?>(null) }
-    val isLoading = remember { mutableStateOf(true) }
-    val errorMessage = remember { mutableStateOf<String?>(null) }
-    val coroutineScope = rememberCoroutineScope()
+fun PokemonDetailScreen(
+    pokemonId: Int,
+    viewModel: PokemonDetailViewModel = viewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(pokemonId) {
-        coroutineScope.launch {
-            try {
-                val response = RetrofitClient.apiService.getPokemonDetail(pokemonId)
-                pokemonDetail.value = response
-                isLoading.value = false
-            } catch (e: Exception) {
-                errorMessage.value = "Error: ${e.message}"
-                isLoading.value = false
-            }
-        }
+        viewModel.loadPokemonDetail(pokemonId)
     }
 
-    when {
-        isLoading.value -> {
+    when (val state = uiState) {
+        is PokemonDetailState.Loading -> {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -43,19 +34,24 @@ fun PokemonDetailScreen(pokemonId: Int) {
                 CircularProgressIndicator()
             }
         }
-        errorMessage.value != null -> {
-            Box(
+        is PokemonDetailState.Error -> {
+            Column(
                 modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = errorMessage.value ?: "",
-                    color = MaterialTheme.colorScheme.error
+                    text = state.message,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(16.dp)
                 )
+                Button(onClick = { viewModel.retry(pokemonId) }) {
+                    Text("Reintentar")
+                }
             }
         }
-        pokemonDetail.value != null -> {
-            val pokemon = pokemonDetail.value!!
+        is PokemonDetailState.Success -> {
+            val pokemon = state.pokemon
             Column(
                 modifier = Modifier
                     .fillMaxSize()

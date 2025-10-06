@@ -1,4 +1,4 @@
-package com.uvg.laboratorio5.network
+package com.uvg.laboratorio5.data.remote
 
 data class PokeListResponse(
     val results: List<PokemonBasic>
