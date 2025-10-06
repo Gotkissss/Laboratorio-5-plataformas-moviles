@@ -1,4 +1,4 @@
-package com.uvg.laboratorio5.network
+package com.uvg.laboratorio5.data.remote
 
 import retrofit2.http.GET
 import retrofit2.http.Path
